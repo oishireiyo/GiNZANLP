@@ -28,12 +28,12 @@ class GiNZANaturalLanguageProcessing(object):
     self.nlp = spacy.load(model)
     ginza.set_split_mode(self.nlp, split_mode)
 
-  # 文境界解析
+  ### 文境界解析 ###
   def get_sentences(self, text: str) -> list[str]:
     doc = self.nlp(text)
     return doc.sents
 
-  # 文節
+  ### 文節 ###
   def get_bunsetu_spans(self, text: str) -> list[str]:
     doc = self.nlp(text)
     return ginza.bunsetu_spans(doc)
@@ -42,7 +42,7 @@ class GiNZANaturalLanguageProcessing(object):
     doc = self.nlp(text)
     return ginza.bunsetu_phrase_spans(doc)
 
-  # 形態素解析
+  ### 形態素解析 ###
   def print_token_syntaxes(self, text: str) -> None:
     '''
     https://qiita.com/kei_0324/items/400f639b2f185b39a0cf
@@ -297,7 +297,7 @@ class GiNZANaturalLanguageProcessing(object):
     }
     return uid_to_jp if uid is None else uid_to_jp[uid.lower()]
 
-  # 固有表現抽出
+  ### 固有表現抽出 ###
   def print_named_entities(self, text: str) -> None:
     '''
     entの主なプロパティ。
@@ -318,15 +318,15 @@ class GiNZANaturalLanguageProcessing(object):
       )
     print('EOS')
 
-  def add_named_entries(self, rules: list[dict[str, str]]) -> None:
+  def add_named_entities(self, rules: list[dict[str, str]]) -> None:
     ruler = self.nlp.add_pipe('entity_ruler')
     ruler.add_patterns(rules)
 
-  def get_named_entries(self, text: str) -> list:
+  def get_named_entities(self, text: str) -> list:
     doc = self.nlp(text)
     return doc.ents
 
-  # 名詞句抽出
+  ### 名詞句抽出 ###
   def print_noun_chunks(self, text: str) -> None:
     doc = self.nlp(text)
     for chunk in doc.noun_chunks:
@@ -345,24 +345,65 @@ class GiNZANaturalLanguageProcessing(object):
     doc = self.nlp(text)
     return doc.noun_chunks
 
-  # 係受け解析
+  ### 係受け解析 ###
   def get_nth_depth_token_syntaxes(self, text: str, nth: int=3) -> list:
     tokens = self.get_tokens(text=text)
-    nth_depth_tokens = {}
+    nth_depth_token_syntaxes = {}
     for token in tokens:
-      _nth_depth_tokens = []
+      _nth_depth_token_syntaxes = []
       _token = None
       ith = 0
       while ith < nth:
         _token = token.head if _token is None else _token.head
-        _nth_depth_tokens.append(_token)
+        _nth_depth_token_syntaxes.append(_token)
         if _token == _token.head:
           break
         ith += 1
-      nth_depth_tokens[token] = _nth_depth_tokens
-    return nth_depth_tokens
+      nth_depth_token_syntaxes[token] = _nth_depth_token_syntaxes
+    return nth_depth_token_syntaxes
 
-  # データフレーム、可視化
+  def get_full_depth_token_syntaxes(self, text: str) -> list:
+    return self.get_nth_depth_token_syntaxes(text=text, nth=len(text))
+
+  def get_nth_depth_named_entity_syntaxes(self, text: str, nth: int=3) -> list:
+    entities = self.get_named_entities(text=text)
+    nth_depth_entity_syntaxes = {}
+    for entity in entities:
+      _nth_depth_entity_syntaxes = []
+      _entity = None
+      ith = 0
+      while ith < nth:
+        _entity = entity.root.head if _entity is None else _entity.head
+        _nth_depth_entity_syntaxes.append(_entry)
+        if _entity == _entity.head:
+          break
+        ith += 1
+      nth_depth_entity_syntaxes[entity] = _nth_depth_entity_syntaxes
+    return nth_depth_entity_syntaxes
+
+  def get_full_depth_named_entity_syntaxes(self, text: str) -> list:
+    return self.get_nth_depth_named_entity_syntaxes(text=text, nth=len(text))
+
+  def get_nth_depth_noun_chunk_syntaxes(self, text: str, nth: int=3) -> list:
+    chunks = self.get_noun_chunks(text=text)
+    nth_depth_chunk_syntaxes = {}
+    for chunk in chunks:
+      _nth_depth_chunk_syntaxes = []
+      _chunk = None
+      ith = 0
+      while ith < nth:
+        _chunk = chunk.root.head if _chunk is None else _chunk.head
+        _nth_depth_chunk_syntaxes.append(_chunk)
+        if _chunk == _chunk.head:
+          break
+        ith += 1
+      nth_depth_chunk_syntaxes[chunk] = _nth_depth_chunk_syntaxes
+    return nth_depth_chunk_syntaxes
+
+  def get_full_depth_noun_chunk_syntaxes(self, text: str) -> list:
+    return self.get_nth_depth_noun_chunk_syntaxes(text=text, nth=len(text))
+
+  ### データフレーム、可視化 ###
   def get_as_dataframe(self, text: str):
     doc = self.nlp(text)
     # 依存構文解析結果の表形式表示
@@ -403,7 +444,7 @@ class GiNZANaturalLanguageProcessing(object):
       'bg': '#ffffff',
     })
 
-  def display_entries(self, text: str, port: int=5002):
+  def display_entities(self, text: str, port: int=5002):
     doc = self.nlp(text)
     displacy.serve(doc, style='ent', port=port, options={
       'compact': True,
@@ -483,9 +524,9 @@ class GiNZANaturalLanguageProcessing(object):
 if __name__ == '__main__':
   parser = GiNZANaturalLanguageProcessing()
 
-  # text='ハウス食品グループの研究では、1日にクルクミン30mgとビサクロン400μgを12週間摂取し続けた、健康な若い男女の肝機能酵素値がとても低下したと報告されています。'
+  text='ハウス食品グループの研究では、1日にクルクミン30mgとビサクロン400μgを12週間摂取し続けた、健康な若い男女の肝機能酵素値がとても低下したと報告されています。'
   # text='この薬を飲むことで、著しく肌年齢が下がることが実験で確認されました。'
-  text='究極の美肌を手に入れるために、弊社の化粧水を毎晩たっぷりお使いください。'
+  # text='究極の美肌を手に入れるために、弊社の化粧水を毎晩たっぷりお使いください。'
   # text='小学生のサツキと妹のメイは、母の療養のために父と一緒に初夏の頃の農村へ引っ越してくる。'
 
   # print('-' * 50)
@@ -567,7 +608,7 @@ if __name__ == '__main__':
 
   # sys.exit(1)
 
-  # parser.add_named_entries(
+  # parser.add_named_entities(
   #   rules=[
   #     {'label': 'Person', 'pattern': 'サツキ'},
   #     {'label': 'Person', 'pattern': 'メイ'},
@@ -579,13 +620,15 @@ if __name__ == '__main__':
   #     {'label': 'Campany', 'pattern': 'Apple'},
   #   ]
   # )
-  # entries = parser.get_named_entries(text=text)
-  # print([ent.text for ent in entries])
+  # entities = parser.get_named_entities(text=text)
+  # print([ent.text for ent in entities])
   # print('-' * 50)
   # noun_chunks = parser.get_noun_chunks(text=text)
   # print([chunk.text for chunk in noun_chunks])
   # print('-' * 50)
 
   parser.print_token_syntaxes(text=text)
-  parser.display_dependencies(text=text)
+  # parser.display_dependencies(text=text)
   pprint.pprint(parser.get_nth_depth_token_syntaxes(text=text, nth=3))
+  pprint.pprint(parser.get_nth_depth_named_entity_syntaxes(text=text, nth=3))
+  pprint.pprint(parser.get_nth_depth_noun_chunk_syntaxes(text=text, nth=3))
