@@ -463,40 +463,46 @@ class GiNZANaturalLanguageProcessing(object):
   ### 否定表現判定 ###
   def check_negative_meaning_token(self, token) -> bool:
     # 条件を列挙し、それに当てはまる場合にTrueそうでなければFalseを返す。 ##
-    # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる残ら「ない」。
+    # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる(残ら)「ない」。
     if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
       return True
-    # ex) 使用後はつっぱることも「なく」肌がふっくらする
+    # ex) 使用後はつっぱる(こと)も「なく」肌がふっくらする
     if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'NOUN':
       return True
-    # ex) ベタベタし「ない」です
+    # ex) (ベタベタ)し「ない」です
     if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
       return True
-    # ex) お肌が柔らかくモチモチのくすみの「ない」肌に。
+    # ex) この人は有名(じゃ)「ない」です
+    if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'AUX':
+      return True
+    # ex) お肌が柔らかくモチモチのくすみの「ない」(肌)に。
     if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'NOUN':
       return True
-    # ex) 肌のゴワつきも「なく」なるの
+    # ex) 肌のゴワつきも「なく」(なる)の
     if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'VERB':
       return True
-    # ex) つっぱる感じは「なかっ」たです。
+    # ex) つっぱる感じは(「なかっ」)たです。
     if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADJ':
       return True
-    # ex) 全くお肌にトラブルが「なく」、スッキリ、しっとりな洗い上がり
+    # ex) 全くお肌にトラブルが「なく」、(スッキリ)、しっとりな洗い上がり
     if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADV':
       return True
-    # ex) 肌荒れしませ「ん」。
+    # ex) (肌荒れ)しませ「ん」。
     if token.lemma_ == 'ぬ' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
       return True
-    # ex) 洗った後に全く突っ張ら「ず」。
+    # ex) これは鉛筆(で)はありませ「ん」。
+    if token.lemma_ == 'ぬ' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'AUX':
+      return True
+    # ex) 洗った後に全く(突っ張ら)「ず」。
     if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
       return True
-    # ex) オイルなのにヌルヌルせ「ず」
+    # ex) オイルなのに(ヌルヌル)せ「ず」
     if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
       return True
-    # ex) こちらを使用して、肌荒れが起こり「にくく」なりました
+    # ex) こちらを使用して、肌荒れが(起こり)「にくく」なりました
     if token.lemma_ == 'にくい' and token.pos_ == 'AUX' and token.head.pos_ == 'VERB':
       return True
-    # ex) 毛穴のザラザラ感が「なくなり」ました。
+    # ex) 毛穴のザラザラ感が(「なくなり」)ました。
     if token.lemma_ in ['なくなる', '無くなる'] and token.pos_ == 'VERB':
       return True
 
@@ -691,8 +697,6 @@ if __name__ == '__main__':
   # parser.display_token_parts_of_speech(text=text, plot_name='pos.png')
   # parser.display_token_dependencies(text=text, plot_name='dep.png')
   # parser.display_root_token_parts_of_speech(texts=[text], plot_name='root_pos.png')
-  chunks = parser.get_noun_chunks(text=text)
-  print(chunks)
-  for chunk in chunks:
-    print(chunk)
-    print(type(chunk))
+
+  text = 'これは鉛筆じゃない'
+  pprint.pprint(parser.print_token_syntaxes(text=text))
