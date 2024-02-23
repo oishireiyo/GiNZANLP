@@ -27,23 +27,27 @@ class GiNZANaturalLanguageProcessing(object):
   def __init__(self, model: str='ja_ginza_electra', split_mode: str='C'):
     self.nlp = spacy.load(model)
     ginza.set_split_mode(self.nlp, split_mode)
+    self.doc = None
+
+  def set_doc(self, text: str) -> None:
+    self.doc = self.nlp(text)
 
   ### 文境界解析 ###
-  def get_sentences(self, text: str) -> list[str]:
-    doc = self.nlp(text)
-    return doc.sents
+  def get_sentences(self, text: Union[str, None]=None) -> list[str]:
+    if not text is None: self.doc = self.nlp(text)
+    return self.doc.sents
 
   ### 文節 ###
-  def get_bunsetu_spans(self, text: str) -> list[str]:
-    doc = self.nlp(text)
-    return ginza.bunsetu_spans(doc)
+  def get_bunsetu_spans(self, text: Union[str, None]=None) -> list[str]:
+    if not text is None: self.doc = self.nlp(text)
+    return ginza.bunsetu_spans(self.doc)
 
-  def get_bunsetu_phrase_spans(self, text: str) -> list[str]:
-    doc = self.nlp(text)
-    return ginza.bunsetu_phrase_spans(doc)
+  def get_bunsetu_phrase_spans(self, text: Union[str, None]) -> list[str]:
+    if not text is None: self.doc = self.nlp(text)
+    return ginza.bunsetu_phrase_spans(self.doc)
 
   ### 形態素解析 ###
-  def print_token_syntaxes(self, text: str) -> None:
+  def print_token_syntaxes(self, text: Union[str, None]=None) -> None:
     '''
     https://qiita.com/kei_0324/items/400f639b2f185b39a0cf
     https://spacy.io/api/token
@@ -128,8 +132,8 @@ class GiNZANaturalLanguageProcessing(object):
     * token.head.i: 係受けの相手トークン番号
     * token.head.text: 係受けの相手テキスト
     '''
-    doc = self.nlp(text)
-    for sent in doc.sents:
+    if not text is None: self.doc = self.nlp(text)
+    for sent in self.doc.sents:
       for token in sent:
         print(
           token.i,
@@ -150,8 +154,8 @@ class GiNZANaturalLanguageProcessing(object):
         )
       print('EOS')
 
-  def _get_tokens(self, text: str, symbols: Union[list[str], None]=None) -> list:
-    doc = self.nlp(text)
+  def _get_tokens(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list:
+    if not text is None: self.doc = self.nlp(text)
     tokens = []
     for sent in doc.sents:
       for token in sent:
@@ -162,51 +166,51 @@ class GiNZANaturalLanguageProcessing(object):
             tokens.append(token)
     return tokens
 
-  def get_tokens(self, text: str) -> list:
+  def get_tokens(self, text: Union[str, None]=None) -> list:
     return self._get_tokens(text=text, symbols=None)
 
-  def get_noun_tokens(self, text: str) -> list:
+  def get_noun_tokens(self, text: Union[str, None]=None) -> list:
     # 名詞を取得
     return self._get_tokens(text=text, symbols=['NOUN', 'PROPN', 'PRON'])
 
-  def get_verb_tokens(self, text: str) -> list:
+  def get_verb_tokens(self, text: Union[str, None]=None) -> list:
     # 動詞を取得
     return self._get_tokens(text=text, symbols=['VERB'])
 
-  def get_adjective_tokens(self, text: str) -> list:
+  def get_adjective_tokens(self, text: Union[str, None]=None) -> list:
     # 形容詞を取得
     return self._get_tokens(text=text, symbols=['ADJ'])
 
-  def get_adverb_tokens(self, text: str) -> list:
+  def get_adverb_tokens(self, text: Union[str, None]=None) -> list:
     # 副詞を取得
     return self._get_tokens(text=text, symbols=['ADV'])
 
-  def get_numeral_tokens(self, text: str) -> list:
+  def get_numeral_tokens(self, text: Union[str, None]=None) -> list:
     # 数詞を取得
     return self._get_tokens(text=text, symbols=['NUM'])
 
-  def get_auxiliary_verb_tokens(self, text: str) -> list:
+  def get_auxiliary_verb_tokens(self, text: Union[str, None]=None) -> list:
     # 助動詞を取得
     return self._get_tokens(text=text, symbols=['AUX'])
 
-  def get_conjunction_tokens(self, text: str) -> list:
+  def get_conjunction_tokens(self, text: Union[str, None]=None) -> list:
     # 接続詞を取得
     return self._get_tokens(text=text, symbols=['CONJ', 'SCONJ'])
 
-  def get_postpositional_particle_tokens(self, text: str) -> list:
+  def get_postpositional_particle_tokens(self, text: Union[str, None]=None) -> list:
     # 助詞を取得
     return self._get_tokens(text=text, symbols=['ADP', 'PART'])
 
-  def get_meaningful_tokens(self, text: str) -> list:
+  def get_meaningful_tokens(self, text: Union[str, None]=None) -> list:
     # 意味を持つ(ROOTになり得る)品詞を取得
     tokens = self._get_tokens(text=text, symbols=['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV'])
     tokens = [token for token in tokens if not token.head.pos_ in ['NOUN', 'PROPN', 'PRON']]
     return tokens
 
-  def _get_tokens_except(self, text: str, symbols: Union[list[str], None]) -> list:
-    doc = self.nlp(text)
+  def _get_tokens_except(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list:
+    if not text is None: self.doc = self.nlp(text)
     tokens = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       for token in sent:
         if symbols is None:
           tokens.append(token)
@@ -215,45 +219,45 @@ class GiNZANaturalLanguageProcessing(object):
             tokens.append(token)
     return tokens
 
-  def get_tokens_except_noun(self, text: str) -> list:
+  def get_tokens_except_noun(self, text: Union[str, None]=None) -> list:
     # 名詞以外を取得
     return self._get_tokens_except(tex=text, symbols=['NOUN', 'PROPN', 'PRON'])
 
-  def get_tokens_except_verb(self, text: str) -> list:
+  def get_tokens_except_verb(self, text: Union[str, None]=None) -> list:
     # 動詞以外を取得
     return self._get_tokens_except(text=text, symbols=['VERB'])
 
-  def get_tokens_except_adjective(self, text: str) -> list:
+  def get_tokens_except_adjective(self, text: Union[str, None]=None) -> list:
     # 形容詞以外を取得
     return self._get_tokens_except(text=text, symbols=['ADJ'])
 
-  def get_tokens_except_adverb(self, text: str) -> list:
+  def get_tokens_except_adverb(self, text: Union[str, None]=None) -> list:
     # 副詞以外を取得
     return self._get_tokens_except(text=text, symbols=['ADV'])
 
-  def get_tokens_except_numeral(self, text: str) -> list:
+  def get_tokens_except_numeral(self, text: Union[str, None]=None) -> list:
     # 数詞以外を取得
     return self._get_tokens_except(text=text, symbols=['NUM'])
 
-  def get_tokens_except_auxiliary_verb(self, text: str) -> list:
+  def get_tokens_except_auxiliary_verb(self, text: Union[str, None]=None) -> list:
     # 助動詞以外を取得
     return self._get_tokens_except(text=text, symbols=['AUX'])
 
-  def get_tokens_except_conjunction(self, text: str) -> list:
+  def get_tokens_except_conjunction(self, text: Union[str, None]=None) -> list:
     # 接続詞以外を取得
     return self._get_tokens_except(text=text, symbols=['CONJ', 'SCONJ'])
 
-  def get_tokens_except_postpositional_particle(self, text: str) -> list:
+  def get_tokens_except_postpositional_particle(self, text: Union[str, None]=None) -> list:
     # 助詞以外を取得
     return self._get_tokens_except(text=text, symbols=['ADP', 'PART'])
 
-  def get_tokens_except_meaningless(self, text: str) -> list:
+  def get_tokens_except_meaningless(self, text: Union[str, None]=None) -> list:
     return self._get_tokens_except(text=text, symbols=['INTJ', 'PUNCT', 'SYM', 'X', 'NUM', 'AUX', 'CONJ', 'SCONJ', 'DET', 'ADP', 'PART'])
 
-  def _get_token_syntaxes(self, text: str, symbols: Union[list[str], None]=None) -> list[tuple]:
-    doc = self.nlp(text)
+  def _get_token_syntaxes(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[tuple]:
+    if not text is None: self.doc = self.nlp(text)
     dependencies = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       for token in sent:
         if symbols is None:
           dependencies.append((token, token.head))
@@ -262,30 +266,30 @@ class GiNZANaturalLanguageProcessing(object):
             dependencies.append((token, token.head))
     return dependencies
 
-  def get_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     return self._get_token_syntaxes(text=text, symbols=None)
 
-  def get_root_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_root_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     # 文の根に該当するトークン取得
     return self._get_token_syntaxes(text=text, symbols=['root', 'ROOT'])
 
-  def get_predicate_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_predicate_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     # 述語を修飾するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['nsubj', 'nsubjpass', 'dobj', 'iobj', 'nmod', 'csubj', 'ccomp', 'advcl', 'advmod', 'neg'])
 
-  def get_noun_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_noun_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     # 名詞を修飾するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['nummod', 'appos', 'acl', 'amod', 'det'])
 
-  def get_compound_word_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_compound_word_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     # 複合語を形成するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['compound', 'name', 'mwe', 'foreign'])
 
-  def get_parallel_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_parallel_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     # 並列関係を構築するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['conj', 'cc'])
 
-  def get_other_token_syntaxes(self, text: str) -> list[tuple]:
+  def get_other_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
     # その他の要素を修飾するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['aux', 'cop', 'mark', 'case', 'punct'])
 
@@ -354,7 +358,7 @@ class GiNZANaturalLanguageProcessing(object):
     return uid_to_jp if uid is None else uid_to_jp[uid.lower()]
 
   ### 固有表現抽出 ###
-  def print_named_entities(self, text: str) -> None:
+  def print_named_entities(self, text: Union[str, None]=None) -> None:
     '''
     entの主なプロパティ。
     * ent.text: テキスト
@@ -362,7 +366,7 @@ class GiNZANaturalLanguageProcessing(object):
     * ent.start_char: 開始位置
     * ent.end_char: 終了位置
     '''
-    doc = self.nlp(text)
+    if not text is None: self.doc = self.nlp(text)
     for ent in doc.ents:
       print(
         ent.text,
@@ -378,14 +382,14 @@ class GiNZANaturalLanguageProcessing(object):
     ruler = self.nlp.add_pipe('entity_ruler')
     ruler.add_patterns(rules)
 
-  def get_named_entities(self, text: str) -> list:
-    doc = self.nlp(text)
-    return doc.ents
+  def get_named_entities(self, text: Union[str, None]=None) -> list:
+    if not text is None: self.doc = self.nlp(text)
+    return self.doc.ents
 
   ### 名詞句抽出 ###
-  def print_noun_chunks(self, text: str) -> None:
-    doc = self.nlp(text)
-    for chunk in doc.noun_chunks:
+  def print_noun_chunks(self, text: Union[str, None]=None) -> None:
+    if not text is None: self.doc = self.nlp(text)
+    for chunk in self.doc.noun_chunks:
       print(
         chunk.text,
         chunk.orth_,
@@ -397,12 +401,12 @@ class GiNZANaturalLanguageProcessing(object):
       )
     print('EOS')
 
-  def get_noun_chunks(self, text: str):
-    doc = self.nlp(text)
-    return doc.noun_chunks
+  def get_noun_chunks(self, text: Union[str, None]=None):
+    if not text is None: self.doc = self.nlp(text)
+    return self.doc.noun_chunks
 
   ### 係受け解析 ###
-  def get_nth_depth_token_syntaxes(self, text: str, nth: int=3) -> list:
+  def get_nth_depth_token_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> list:
     tokens = self.get_tokens(text=text)
     nth_depth_token_syntaxes = {}
     for token in tokens:
@@ -417,10 +421,10 @@ class GiNZANaturalLanguageProcessing(object):
       nth_depth_token_syntaxes[token] = _nth_depth_token_syntaxes
     return nth_depth_token_syntaxes
 
-  def get_full_depth_token_syntaxes(self, text: str) -> list:
+  def get_full_depth_token_syntaxes(self, text: Union[str, None]=None) -> list:
     return self.get_nth_depth_token_syntaxes(text=text, nth=len(text))
 
-  def get_nth_depth_named_entity_syntaxes(self, text: str, nth: int=3) -> list:
+  def get_nth_depth_named_entity_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> list:
     entities = self.get_named_entities(text=text)
     nth_depth_entity_syntaxes = {}
     for entity in entities:
@@ -435,10 +439,10 @@ class GiNZANaturalLanguageProcessing(object):
       nth_depth_entity_syntaxes[entity] = _nth_depth_entity_syntaxes
     return nth_depth_entity_syntaxes
 
-  def get_full_depth_named_entity_syntaxes(self, text: str) -> list:
+  def get_full_depth_named_entity_syntaxes(self, text: Union[str, None]=None) -> list:
     return self.get_nth_depth_named_entity_syntaxes(text=text, nth=len(text))
 
-  def get_nth_depth_noun_chunk_syntaxes(self, text: str, nth: int=3) -> list:
+  def get_nth_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> list:
     chunks = self.get_noun_chunks(text=text)
     nth_depth_chunk_syntaxes = {}
     for chunk in chunks:
@@ -453,13 +457,13 @@ class GiNZANaturalLanguageProcessing(object):
       nth_depth_chunk_syntaxes[chunk] = _nth_depth_chunk_syntaxes
     return nth_depth_chunk_syntaxes
 
-  def get_full_depth_noun_chunk_syntaxes(self, text: str) -> list:
+  def get_full_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None) -> list:
     return self.get_nth_depth_noun_chunk_syntaxes(text=text, nth=len(text))
 
   ### 否定表現判定 ###
-  def check_negative_sentence(self, text: str) -> bool:
-    doc = self.nlp(text)
-    for sent in doc.sents:
+  def check_negative_sentence(self, text: Union[str, None]=None) -> bool:
+    if not text is None: self.doc = self.nlp(text)
+    for sent in self.doc.sents:
       for token in sent:
         ## 条件を列挙し、それに当てはまる場合にTrueそうでなければFalseを返す。 ##
         # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる残ら「ない」。
@@ -502,11 +506,11 @@ class GiNZANaturalLanguageProcessing(object):
     return False
 
   ### データフレーム化 ###
-  def get_as_dataframe(self, text: str):
-    doc = self.nlp(text)
+  def get_as_dataframe(self, text: Union[str, None]=None):
+    if not text is None: self.doc = self.nlp(text)
     # 依存構文解析結果の表形式表示
     results = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       # 1文ごとに改行表示(センテンス区切り表示)
       # 各文を解析して結果をlistに入れる(文章が複数ある場合も一まとめにする)
       for token in sent:
@@ -535,27 +539,27 @@ class GiNZANaturalLanguageProcessing(object):
     return results
 
   ### 可視化 ###
-  def display_dependencies(self, text: str, port: int=5001):
-    doc = self.nlp(text)
-    displacy.serve(doc, style='dep', port=port, options={
+  def display_dependencies(self, text: Union[str, None]=None, port: int=5001):
+    if not text is None: self.doc = self.nlp(text)
+    displacy.serve(self.doc, style='dep', port=port, options={
       'compact': True,
       'color': '#000000',
       'bg': '#ffffff',
     })
 
-  def display_entities(self, text: str, port: int=5002):
-    doc = self.nlp(text)
-    displacy.serve(doc, style='ent', port=port, options={
+  def display_entities(self, text: Union[str, None]=None, port: int=5002):
+    if not text is None: self.doc = self.nlp(text)
+    displacy.serve(self.doc, style='ent', port=port, options={
       'compact': True,
       'color': '#000000',
       'bg': '#ffffff',
     })
 
-  def display_token_parts_of_speech(self, text: str, plot_name: str):
-    doc = self.nlp(text)
+  def display_token_parts_of_speech(self, text: Union[str, None]=None, plot_name: str):
+    if not text is None: self.doc = self.nlp(text)
 
     pos = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       for token in sent:
         pos.append(token.pos_)
     pos_counts = {self.convert_token_pos_UID_to_jp(uid=x): pos.count(x) for x in set(pos)}
@@ -570,11 +574,11 @@ class GiNZANaturalLanguageProcessing(object):
     plt.subplots_adjust(bottom=0.33)
     plt.savefig(plot_name)
 
-  def display_token_dependencies(self, text: str, plot_name: str):
-    doc = self.nlp(text)
+  def display_token_dependencies(self, text: Union[str, None]=None, plot_name: str):
+    if not text is None: self.doc = self.nlp(text)
 
     dep = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       for token in sent:
         dep.append(token.dep_)
     dep_counts = {self.convert_token_dep_UID_to_jp(uid=x): dep.count(x) for x in set(dep)}
@@ -589,12 +593,12 @@ class GiNZANaturalLanguageProcessing(object):
     plt.subplots_adjust(bottom=0.33)
     plt.savefig(plot_name)
 
-  def display_token_pos_connections(self, text: str, plot_name: str):
-    doc = self.nlp(text)
+  def display_token_pos_connections(self, text: Union[str, None]=None, plot_name: str):
+    if not text is None: self.doc = self.nlp(text)
 
     pos_from = []
     pos_to = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       for token in sent:
         pos_from.append(self.convert_token_pos_UID_to_jp(token.pos_))
         pos_to.append(self.convert_token_pos_UID_to_jp(tokne.head.pos_))
