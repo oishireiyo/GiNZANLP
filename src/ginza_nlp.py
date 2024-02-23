@@ -141,6 +141,7 @@ class GiNZANaturalLanguageProcessing(object):
           token.pos_,
           # token.morph.get('Inflection'),
           token.tag_,
+          token.dep_,
           # self.convert_token_dep_UID_to_jp(token.dep_),
           token.is_stop,
           token.head.i,
@@ -464,6 +465,12 @@ class GiNZANaturalLanguageProcessing(object):
         # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる残ら「ない」。
         if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
           return True
+        # ex) 使用後はつっぱることも「なく」肌がふっくらする
+        if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'NOUN':
+          return True
+        # ex) ベタベタし「ない」です
+        if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
+          return True
         # ex) お肌が柔らかくモチモチのくすみの「ない」肌に。
         if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'NOUN':
           return True
@@ -473,12 +480,25 @@ class GiNZANaturalLanguageProcessing(object):
         # ex) つっぱる感じは「なかっ」たです。
         if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADJ':
           return True
+        # ex) 全くお肌にトラブルが「なく」、スッキリ、しっとりな洗い上がり
+        if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADV':
+          return True
         # ex) 肌荒れしませ「ん」。
         if token.lemma_ == 'ぬ' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
           return True
         # ex) 洗った後に全く突っ張ら「ず」。
         if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
           return True
+        # ex) オイルなのにヌルヌルせ「ず」
+        if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
+          return True
+        # ex) こちらを使用して、肌荒れが起こりにくくなりました
+        if token.lemma_ == 'にくい' and token.pos_ == 'AUX' and token.head.pos_ == 'VERB':
+          return True
+        # ex) 毛穴のザラザラ感が「なくなり」ました。
+        if token.lemma_ in ['なくなる', '無くなる'] and token.pos_ == 'VERB':
+          return True
+
     return False
 
   ### データフレーム化 ###
