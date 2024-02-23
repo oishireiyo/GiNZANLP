@@ -3,7 +3,7 @@
 import os
 import sys
 import pprint
-from typing import Union
+from typing import Union, Generator
 
 # Logging
 import logging
@@ -24,7 +24,7 @@ from spacy.pipeline import EntityRuler
 import ginza
 
 class GiNZANaturalLanguageProcessing(object):
-  def __init__(self, model: str='ja_ginza_electra', split_mode: str='C'):
+  def __init__(self, model: str='ja_ginza_electra', split_mode: str='C') -> None:
     self.nlp = spacy.load(model)
     ginza.set_split_mode(self.nlp, split_mode)
     self.doc = None
@@ -33,16 +33,16 @@ class GiNZANaturalLanguageProcessing(object):
     self.doc = self.nlp(text)
 
   ### 文境界解析 ###
-  def get_sentences(self, text: Union[str, None]=None) -> list[str]:
+  def get_sentences(self, text: Union[str, None]=None) -> Generator[str, None, None]:
     if not text is None: self.doc = self.nlp(text)
     return self.doc.sents
 
   ### 文節 ###
-  def get_bunsetu_spans(self, text: Union[str, None]=None) -> list[str]:
+  def get_bunsetu_spans(self, text: Union[str, None]=None) -> list[spacy.tokens.span.Span]:
     if not text is None: self.doc = self.nlp(text)
     return ginza.bunsetu_spans(self.doc)
 
-  def get_bunsetu_phrase_spans(self, text: Union[str, None]) -> list[str]:
+  def get_bunsetu_phrase_spans(self, text: Union[str, None]) -> list[spacy.tokens.span.Span]:
     if not text is None: self.doc = self.nlp(text)
     return ginza.bunsetu_phrase_spans(self.doc)
 
@@ -154,10 +154,10 @@ class GiNZANaturalLanguageProcessing(object):
         )
       print('EOS')
 
-  def _get_tokens(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list:
+  def _get_tokens(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[spacy.tokens.token.Token]:
     if not text is None: self.doc = self.nlp(text)
     tokens = []
-    for sent in doc.sents:
+    for sent in self.doc.sents:
       for token in sent:
         if symbols is None:
           tokens.append(token)
@@ -166,48 +166,48 @@ class GiNZANaturalLanguageProcessing(object):
             tokens.append(token)
     return tokens
 
-  def get_tokens(self, text: Union[str, None]=None) -> list:
+  def get_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     return self._get_tokens(text=text, symbols=None)
 
-  def get_noun_tokens(self, text: Union[str, None]=None) -> list:
+  def get_noun_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 名詞を取得
     return self._get_tokens(text=text, symbols=['NOUN', 'PROPN', 'PRON'])
 
-  def get_verb_tokens(self, text: Union[str, None]=None) -> list:
+  def get_verb_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 動詞を取得
     return self._get_tokens(text=text, symbols=['VERB'])
 
-  def get_adjective_tokens(self, text: Union[str, None]=None) -> list:
+  def get_adjective_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 形容詞を取得
     return self._get_tokens(text=text, symbols=['ADJ'])
 
-  def get_adverb_tokens(self, text: Union[str, None]=None) -> list:
+  def get_adverb_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 副詞を取得
     return self._get_tokens(text=text, symbols=['ADV'])
 
-  def get_numeral_tokens(self, text: Union[str, None]=None) -> list:
+  def get_numeral_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 数詞を取得
     return self._get_tokens(text=text, symbols=['NUM'])
 
-  def get_auxiliary_verb_tokens(self, text: Union[str, None]=None) -> list:
+  def get_auxiliary_verb_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 助動詞を取得
     return self._get_tokens(text=text, symbols=['AUX'])
 
-  def get_conjunction_tokens(self, text: Union[str, None]=None) -> list:
+  def get_conjunction_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 接続詞を取得
     return self._get_tokens(text=text, symbols=['CONJ', 'SCONJ'])
 
-  def get_postpositional_particle_tokens(self, text: Union[str, None]=None) -> list:
+  def get_postpositional_particle_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 助詞を取得
     return self._get_tokens(text=text, symbols=['ADP', 'PART'])
 
-  def get_meaningful_tokens(self, text: Union[str, None]=None) -> list:
+  def get_meaningful_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 意味を持つ(ROOTになり得る)品詞を取得
     tokens = self._get_tokens(text=text, symbols=['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV'])
     tokens = [token for token in tokens if not token.head.pos_ in ['NOUN', 'PROPN', 'PRON']]
     return tokens
 
-  def _get_tokens_except(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list:
+  def _get_tokens_except(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[spacy.tokens.token.Token]:
     if not text is None: self.doc = self.nlp(text)
     tokens = []
     for sent in self.doc.sents:
@@ -219,42 +219,42 @@ class GiNZANaturalLanguageProcessing(object):
             tokens.append(token)
     return tokens
 
-  def get_tokens_except_noun(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_noun(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 名詞以外を取得
     return self._get_tokens_except(tex=text, symbols=['NOUN', 'PROPN', 'PRON'])
 
-  def get_tokens_except_verb(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_verb(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 動詞以外を取得
     return self._get_tokens_except(text=text, symbols=['VERB'])
 
-  def get_tokens_except_adjective(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_adjective(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 形容詞以外を取得
     return self._get_tokens_except(text=text, symbols=['ADJ'])
 
-  def get_tokens_except_adverb(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_adverb(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 副詞以外を取得
     return self._get_tokens_except(text=text, symbols=['ADV'])
 
-  def get_tokens_except_numeral(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_numeral(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 数詞以外を取得
     return self._get_tokens_except(text=text, symbols=['NUM'])
 
-  def get_tokens_except_auxiliary_verb(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_auxiliary_verb(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 助動詞以外を取得
     return self._get_tokens_except(text=text, symbols=['AUX'])
 
-  def get_tokens_except_conjunction(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_conjunction(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 接続詞以外を取得
     return self._get_tokens_except(text=text, symbols=['CONJ', 'SCONJ'])
 
-  def get_tokens_except_postpositional_particle(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_postpositional_particle(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 助詞以外を取得
     return self._get_tokens_except(text=text, symbols=['ADP', 'PART'])
 
-  def get_tokens_except_meaningless(self, text: Union[str, None]=None) -> list:
+  def get_tokens_except_meaningless(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     return self._get_tokens_except(text=text, symbols=['INTJ', 'PUNCT', 'SYM', 'X', 'NUM', 'AUX', 'CONJ', 'SCONJ', 'DET', 'ADP', 'PART'])
 
-  def _get_token_syntaxes(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[tuple]:
+  def _get_token_syntaxes(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     if not text is None: self.doc = self.nlp(text)
     dependencies = []
     for sent in self.doc.sents:
@@ -266,30 +266,30 @@ class GiNZANaturalLanguageProcessing(object):
             dependencies.append((token, token.head))
     return dependencies
 
-  def get_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     return self._get_token_syntaxes(text=text, symbols=None)
 
-  def get_root_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_root_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     # 文の根に該当するトークン取得
     return self._get_token_syntaxes(text=text, symbols=['root', 'ROOT'])
 
-  def get_predicate_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_predicate_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     # 述語を修飾するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['nsubj', 'nsubjpass', 'dobj', 'iobj', 'nmod', 'csubj', 'ccomp', 'advcl', 'advmod', 'neg'])
 
-  def get_noun_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_noun_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     # 名詞を修飾するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['nummod', 'appos', 'acl', 'amod', 'det'])
 
-  def get_compound_word_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_compound_word_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     # 複合語を形成するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['compound', 'name', 'mwe', 'foreign'])
 
-  def get_parallel_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_parallel_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     # 並列関係を構築するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['conj', 'cc'])
 
-  def get_other_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple]:
+  def get_other_token_syntaxes(self, text: Union[str, None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     # その他の要素を修飾するトークンの取得
     return self._get_token_syntaxes(text=text, symbols=['aux', 'cop', 'mark', 'case', 'punct'])
 
@@ -382,7 +382,7 @@ class GiNZANaturalLanguageProcessing(object):
     ruler = self.nlp.add_pipe('entity_ruler')
     ruler.add_patterns(rules)
 
-  def get_named_entities(self, text: Union[str, None]=None) -> list:
+  def get_named_entities(self, text: Union[str, None]=None) -> list[spacy.tokens.span.Span]:
     if not text is None: self.doc = self.nlp(text)
     return self.doc.ents
 
@@ -401,19 +401,19 @@ class GiNZANaturalLanguageProcessing(object):
       )
     print('EOS')
 
-  def get_noun_chunks(self, text: Union[str, None]=None):
+  def get_noun_chunks(self, text: Union[str, None]=None) -> Generator[spacy.tokens.span.Span, None, None]:
     if not text is None: self.doc = self.nlp(text)
     return self.doc.noun_chunks
 
   ### 係受け解析 ###
-  def get_nth_depth_token_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> list:
+  def get_nth_depth_token_syntaxes(self, text: Union[str, None]=None, nth: Union[int, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
     tokens = self.get_tokens(text=text)
     nth_depth_token_syntaxes = {}
     for token in tokens:
       _nth_depth_token_syntaxes = []
       _token = token.head
       ith = 0
-      while ith < nth:
+      while True if nth is None else ith < nth:
         _nth_depth_token_syntaxes.append(_token)
         if _token == _token.head: break
         _token = _token.head
@@ -421,10 +421,10 @@ class GiNZANaturalLanguageProcessing(object):
       nth_depth_token_syntaxes[token] = _nth_depth_token_syntaxes
     return nth_depth_token_syntaxes
 
-  def get_full_depth_token_syntaxes(self, text: Union[str, None]=None) -> list:
-    return self.get_nth_depth_token_syntaxes(text=text, nth=len(text))
+  def get_full_depth_token_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    return self.get_nth_depth_token_syntaxes(text=text, nth=None)
 
-  def get_nth_depth_named_entity_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> list:
+  def get_nth_depth_named_entity_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     entities = self.get_named_entities(text=text)
     nth_depth_entity_syntaxes = {}
     for entity in entities:
@@ -439,10 +439,10 @@ class GiNZANaturalLanguageProcessing(object):
       nth_depth_entity_syntaxes[entity] = _nth_depth_entity_syntaxes
     return nth_depth_entity_syntaxes
 
-  def get_full_depth_named_entity_syntaxes(self, text: Union[str, None]=None) -> list:
+  def get_full_depth_named_entity_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     return self.get_nth_depth_named_entity_syntaxes(text=text, nth=len(text))
 
-  def get_nth_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> list:
+  def get_nth_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     chunks = self.get_noun_chunks(text=text)
     nth_depth_chunk_syntaxes = {}
     for chunk in chunks:
@@ -457,56 +457,72 @@ class GiNZANaturalLanguageProcessing(object):
       nth_depth_chunk_syntaxes[chunk] = _nth_depth_chunk_syntaxes
     return nth_depth_chunk_syntaxes
 
-  def get_full_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None) -> list:
+  def get_full_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     return self.get_nth_depth_noun_chunk_syntaxes(text=text, nth=len(text))
 
   ### 否定表現判定 ###
-  def check_negative_sentence(self, text: Union[str, None]=None) -> bool:
+  def check_negative_meaning_token(self, token) -> bool:
+    # 条件を列挙し、それに当てはまる場合にTrueそうでなければFalseを返す。 ##
+    # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる残ら「ない」。
+    if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
+      return True
+    # ex) 使用後はつっぱることも「なく」肌がふっくらする
+    if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'NOUN':
+      return True
+    # ex) ベタベタし「ない」です
+    if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
+      return True
+    # ex) お肌が柔らかくモチモチのくすみの「ない」肌に。
+    if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'NOUN':
+      return True
+    # ex) 肌のゴワつきも「なく」なるの
+    if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'VERB':
+      return True
+    # ex) つっぱる感じは「なかっ」たです。
+    if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADJ':
+      return True
+    # ex) 全くお肌にトラブルが「なく」、スッキリ、しっとりな洗い上がり
+    if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADV':
+      return True
+    # ex) 肌荒れしませ「ん」。
+    if token.lemma_ == 'ぬ' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
+      return True
+    # ex) 洗った後に全く突っ張ら「ず」。
+    if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
+      return True
+    # ex) オイルなのにヌルヌルせ「ず」
+    if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
+      return True
+    # ex) こちらを使用して、肌荒れが起こり「にくく」なりました
+    if token.lemma_ == 'にくい' and token.pos_ == 'AUX' and token.head.pos_ == 'VERB':
+      return True
+    # ex) 毛穴のザラザラ感が「なくなり」ました。
+    if token.lemma_ in ['なくなる', '無くなる'] and token.pos_ == 'VERB':
+      return True
+
+    return False
+
+  def check_negative_meaning_sentence(self, text: Union[str, None]=None) -> bool:
     if not text is None: self.doc = self.nlp(text)
     for sent in self.doc.sents:
       for token in sent:
-        ## 条件を列挙し、それに当てはまる場合にTrueそうでなければFalseを返す。 ##
-        # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる残ら「ない」。
-        if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
-          return True
-        # ex) 使用後はつっぱることも「なく」肌がふっくらする
-        if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'NOUN':
-          return True
-        # ex) ベタベタし「ない」です
-        if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
-          return True
-        # ex) お肌が柔らかくモチモチのくすみの「ない」肌に。
-        if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'NOUN':
-          return True
-        # ex) 肌のゴワつきも「なく」なるの
-        if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'VERB':
-          return True
-        # ex) つっぱる感じは「なかっ」たです。
-        if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADJ':
-          return True
-        # ex) 全くお肌にトラブルが「なく」、スッキリ、しっとりな洗い上がり
-        if token.lemma_ == 'ない' and token.pos_ == 'ADJ' and token.is_stop and token.head.pos_ == 'ADV':
-          return True
-        # ex) 肌荒れしませ「ん」。
-        if token.lemma_ == 'ぬ' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
-          return True
-        # ex) 洗った後に全く突っ張ら「ず」。
-        if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
-          return True
-        # ex) オイルなのにヌルヌルせ「ず」
-        if token.lemma_ == 'ず' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'ADV':
-          return True
-        # ex) こちらを使用して、肌荒れが起こりにくくなりました
-        if token.lemma_ == 'にくい' and token.pos_ == 'AUX' and token.head.pos_ == 'VERB':
-          return True
-        # ex) 毛穴のザラザラ感が「なくなり」ました。
-        if token.lemma_ in ['なくなる', '無くなる'] and token.pos_ == 'VERB':
+        if self.check_negative_meaning_token(token=token):
           return True
 
     return False
 
+  def get_negative_meaning_token(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
+    if not text is None: self.doc = self.nlp(text)
+    tokens = []
+    for sent in self.doc.sents:
+      for token in sent:
+        if self.check_negative_meaning_token(token=token):
+          tokens.append(token)
+
+    return tokens
+
   ### データフレーム化 ###
-  def get_as_dataframe(self, text: Union[str, None]=None):
+  def get_as_dataframe(self, text: Union[str, None]=None) -> list[dict[str, str]]:
     if not text is None: self.doc = self.nlp(text)
     # 依存構文解析結果の表形式表示
     results = []
@@ -539,7 +555,7 @@ class GiNZANaturalLanguageProcessing(object):
     return results
 
   ### 可視化 ###
-  def display_dependencies(self, text: Union[str, None]=None, port: int=5001):
+  def display_dependencies(self, text: Union[str, None]=None, port: int=5001) -> None:
     if not text is None: self.doc = self.nlp(text)
     displacy.serve(self.doc, style='dep', port=port, options={
       'compact': True,
@@ -547,7 +563,7 @@ class GiNZANaturalLanguageProcessing(object):
       'bg': '#ffffff',
     })
 
-  def display_entities(self, text: Union[str, None]=None, port: int=5002):
+  def display_entities(self, text: Union[str, None]=None, port: int=5002) -> None:
     if not text is None: self.doc = self.nlp(text)
     displacy.serve(self.doc, style='ent', port=port, options={
       'compact': True,
@@ -555,7 +571,7 @@ class GiNZANaturalLanguageProcessing(object):
       'bg': '#ffffff',
     })
 
-  def display_token_parts_of_speech(self, text: Union[str, None]=None, plot_name: str):
+  def display_token_parts_of_speech(self, text: Union[str, None]=None, plot_name: str='pos.png') -> None:
     if not text is None: self.doc = self.nlp(text)
 
     pos = []
@@ -574,7 +590,7 @@ class GiNZANaturalLanguageProcessing(object):
     plt.subplots_adjust(bottom=0.33)
     plt.savefig(plot_name)
 
-  def display_token_dependencies(self, text: Union[str, None]=None, plot_name: str):
+  def display_token_dependencies(self, text: Union[str, None]=None, plot_name: str='dep.png') -> None:
     if not text is None: self.doc = self.nlp(text)
 
     dep = []
@@ -593,7 +609,7 @@ class GiNZANaturalLanguageProcessing(object):
     plt.subplots_adjust(bottom=0.33)
     plt.savefig(plot_name)
 
-  def display_token_pos_connections(self, text: Union[str, None]=None, plot_name: str):
+  def display_token_pos_connections(self, text: Union[str, None]=None, plot_name: str='pos_connections.png') -> None:
     if not text is None: self.doc = self.nlp(text)
 
     pos_from = []
@@ -624,7 +640,7 @@ class GiNZANaturalLanguageProcessing(object):
     plt.subplots_adjust(left=0.20, bottom=0.33)
     plt.savefig(plot_name)
 
-  def display_root_token_parts_of_speech(self, texts: list[str], plot_name: str):
+  def display_root_token_parts_of_speech(self, texts: list[str], plot_name: str='root_pos.png') -> None:
     pos = []
     for text in texts:
       pos += [root_token.pos_ for (root_token, _) in self.get_root_token_syntaxes(text=text)]
@@ -647,84 +663,6 @@ if __name__ == '__main__':
   # text='この薬を飲むことで、著しく肌年齢が下がることが実験で確認されました。'
   # text='究極の美肌を手に入れるために、弊社の化粧水を毎晩たっぷりお使いください。'
   # text='小学生のサツキと妹のメイは、母の療養のために父と一緒に初夏の頃の農村へ引っ越してくる。'
-
-  # print('-' * 50)
-  # tokens = parser.get_noun_tokens(text=text)
-  # print([token.orth_ for token in tokens])
-  # print([token.lemma_ for token in tokens])
-  # print([token.dep_ for token in tokens])
-  # print([token.head.text for token in tokens])
-  # print('-' * 50)
-  # tokens = parser.get_verb_tokens(text=text)
-  # print([token.orth_ for token in tokens])
-  # print([token.lemma_ for token in tokens])
-  # print([token.dep_ for token in tokens])
-  # print([token.head.text for token in tokens])
-  # print('-' * 50)
-  # tokens = parser.get_adjective_tokens(text=text)
-  # print([token.orth_ for token in tokens])
-  # print([token.lemma_ for token in tokens])
-  # print([token.dep_ for token in tokens])
-  # print([token.head.text for token in tokens])
-  # print('-' * 50)
-  # tokens = parser.get_adverb_tokens(text=text)
-  # print([token.orth_ for token in tokens])
-  # print([token.lemma_ for token in tokens])
-  # print([token.dep_ for token in tokens])
-  # print([token.head.text for token in tokens])
-  # print('-' * 50)
-  # tokens = parser.get_numeral_tokens(text=text)
-  # print([token.orth_ for token in tokens])
-  # print([token.lemma_ for token in tokens])
-  # print([token.dep_ for token in tokens])
-  # print([token.head.text for token in tokens])
-  # print('-' * 50)
-
-  # print('=' * 50)
-  # print('-' * 50)
-  # syntaxes = parser.get_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-  # syntaxes = parser.get_root_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-  # syntaxes = parser.get_predicate_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-  # syntaxes = parser.get_noun_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-  # syntaxes = parser.get_compound_word_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-  # syntaxes = parser.get_parallel_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-  # syntaxes = parser.get_other_token_syntaxes(text=text)
-  # print([token.orth_ for token, _ in syntaxes])
-  # print([token.lemma_ for token, _ in syntaxes])
-  # print([token.dep_ for token, _ in syntaxes])
-  # print([token.text for _, token in syntaxes])
-  # print('-' * 50)
-
   # sys.exit(1)
 
   # parser.add_named_entities(
@@ -746,12 +684,15 @@ if __name__ == '__main__':
   # print([chunk.text for chunk in noun_chunks])
   # print('-' * 50)
 
-  # parser.print_token_syntaxes(text=text)
-  # parser.display_dependencies(text=text)
   # pprint.pprint(parser.get_nth_depth_token_syntaxes(text=text, nth=3))
   # pprint.pprint(parser.get_nth_depth_named_entity_syntaxes(text=text, nth=3))
   # pprint.pprint(parser.get_nth_depth_noun_chunk_syntaxes(text=text, nth=3))
 
   # parser.display_token_parts_of_speech(text=text, plot_name='pos.png')
   # parser.display_token_dependencies(text=text, plot_name='dep.png')
-  parser.display_root_token_parts_of_speech(texts=[text], plot_name='root_pos.png')
+  # parser.display_root_token_parts_of_speech(texts=[text], plot_name='root_pos.png')
+  chunks = parser.get_noun_chunks(text=text)
+  print(chunks)
+  for chunk in chunks:
+    print(chunk)
+    print(type(chunk))
