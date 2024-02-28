@@ -1,4 +1,3 @@
-
 # Standard modules
 import os
 import sys
@@ -154,6 +153,9 @@ class GiNZANaturalLanguageProcessing(object):
         )
       print('EOS')
 
+  def check_token_pos(self, token: spacy.tokens.token.Token, symbols: list[str]) -> bool:
+    return token.pos_ in symbols
+
   def _get_tokens(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[spacy.tokens.token.Token]:
     if not text is None: self.doc = self.nlp(text)
     tokens = []
@@ -203,9 +205,11 @@ class GiNZANaturalLanguageProcessing(object):
 
   def get_meaningful_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     # 意味を持つ(ROOTになり得る)品詞を取得
-    tokens = self._get_tokens(text=text, symbols=['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV'])
-    tokens = [token for token in tokens if not token.head.pos_ in ['NOUN', 'PROPN', 'PRON']]
-    return tokens
+    return self._get_tokens(text=text, symbols=['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV', 'NUM'])
+
+  def get_meaningless_tokens(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
+    # 意味を持たない(ROOTになれない)品詞を取得
+    return self._get_tokens(text=text, symbols=['INTJ', 'PUNCT', 'SYM', 'X', 'NUM', 'AUX', 'CONJ', 'SCONJ', 'DET', 'ADP', 'PART'])
 
   def _get_tokens_except(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[spacy.tokens.token.Token]:
     if not text is None: self.doc = self.nlp(text)
@@ -252,7 +256,12 @@ class GiNZANaturalLanguageProcessing(object):
     return self._get_tokens_except(text=text, symbols=['ADP', 'PART'])
 
   def get_tokens_except_meaningless(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
+    # 意味を持たない(ROOTになれない)トークン以外を取得
     return self._get_tokens_except(text=text, symbols=['INTJ', 'PUNCT', 'SYM', 'X', 'NUM', 'AUX', 'CONJ', 'SCONJ', 'DET', 'ADP', 'PART'])
+
+  def get_tokens_except_meaningful(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
+    # 意味を持つ(ROOTになれ得る)トークン以外を取得
+    return self._get_tokens_except(text=text, symbols=['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV', 'NUM'])
 
   def _get_token_syntaxes(self, text: Union[str, None]=None, symbols: Union[list[str], None]=None) -> list[tuple[spacy.tokens.token.Token, spacy.tokens.token.Token]]:
     if not text is None: self.doc = self.nlp(text)
@@ -367,7 +376,7 @@ class GiNZANaturalLanguageProcessing(object):
     * ent.end_char: 終了位置
     '''
     if not text is None: self.doc = self.nlp(text)
-    for ent in doc.ents:
+    for ent in self.doc.ents:
       print(
         ent.text,
         ent.orth_,
@@ -424,23 +433,44 @@ class GiNZANaturalLanguageProcessing(object):
   def get_full_depth_token_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
     return self.get_nth_depth_token_syntaxes(text=text, nth=None)
 
+  def get_nth_depth_meaningful_token_syntaxes(self, text: Union[str, None]=None, nth: Union[int, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    symbols = ['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV', 'NUM']
+
+    tokens = self.get_tokens(text=text)
+    nth_depth_token_syntaxes = {}
+    for token in tokens:
+      if token.pos_ in symbols:
+        _nth_depth_token_syntaxes = []
+        _token = token.head
+        ith = 0
+        while True if nth is None else ith < nth:
+          if _token.pos_ in symbols: _nth_depth_token_syntaxes.append(_token)
+          if _token == _token.head: break
+          _token = _token.head
+          ith += 1
+        nth_depth_token_syntaxes[token] = _nth_depth_token_syntaxes
+    return nth_depth_token_syntaxes
+
+  def get_full_depth_meaningful_token_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    return self.get_nth_depth_meaningful_token_syntaxes(text=text, nth=None)
+
   def get_nth_depth_named_entity_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     entities = self.get_named_entities(text=text)
     nth_depth_entity_syntaxes = {}
     for entity in entities:
       _nth_depth_entity_syntaxes = []
-      _entity = entry.root.head
+      _entity = entity.root.head
       ith = 0
-      while ith < nth:
-        _nth_depth_entity_syntaxes.append(_entry)
+      while True if nth is None else ith < nth:
+        _nth_depth_entity_syntaxes.append(_entity)
         if _entity == _entity.head: break
-        _entry = _entry.head
+        _entity = _entity.head
         ith += 1
       nth_depth_entity_syntaxes[entity] = _nth_depth_entity_syntaxes
     return nth_depth_entity_syntaxes
 
   def get_full_depth_named_entity_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
-    return self.get_nth_depth_named_entity_syntaxes(text=text, nth=len(text))
+    return self.get_nth_depth_named_entity_syntaxes(text=text, nth=None)
 
   def get_nth_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     chunks = self.get_noun_chunks(text=text)
@@ -449,7 +479,7 @@ class GiNZANaturalLanguageProcessing(object):
       _nth_depth_chunk_syntaxes = []
       _chunk = chunk.root.head
       ith = 0
-      while ith < nth:
+      while True if nth is None else ith < nth:
         _nth_depth_chunk_syntaxes.append(_chunk)
         if _chunk == _chunk.head: break
         _chunk = _chunk.head
@@ -458,11 +488,12 @@ class GiNZANaturalLanguageProcessing(object):
     return nth_depth_chunk_syntaxes
 
   def get_full_depth_noun_chunk_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
-    return self.get_nth_depth_noun_chunk_syntaxes(text=text, nth=len(text))
+    return self.get_nth_depth_noun_chunk_syntaxes(text=text, nth=None)
 
   ### 否定表現判定 ###
-  def check_negative_meaning_token(self, token) -> bool:
+  def check_denial_meaning_token(self, token) -> bool:
     # 条件を列挙し、それに当てはまる場合にTrueそうでなければFalseを返す。 ##
+    # 「」は否定表現、()は係受け先を表す。
     # ex) メイクもスッキリ落ちて洗い上がりもぬるぬる(残ら)「ない」。
     if token.lemma_ == 'ない' and token.pos_ == 'AUX' and token.is_stop and token.head.pos_ == 'VERB':
       return True
@@ -508,21 +539,21 @@ class GiNZANaturalLanguageProcessing(object):
 
     return False
 
-  def check_negative_meaning_sentence(self, text: Union[str, None]=None) -> bool:
+  def check_denial_meaning_sentence(self, text: Union[str, None]=None) -> bool:
     if not text is None: self.doc = self.nlp(text)
     for sent in self.doc.sents:
       for token in sent:
-        if self.check_negative_meaning_token(token=token):
+        if self.check_denial_meaning_token(token=token):
           return True
 
     return False
 
-  def get_negative_meaning_token(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
+  def get_denial_meaning_token(self, text: Union[str, None]=None) -> list[spacy.tokens.token.Token]:
     if not text is None: self.doc = self.nlp(text)
     tokens = []
     for sent in self.doc.sents:
       for token in sent:
-        if self.check_negative_meaning_token(token=token):
+        if self.check_denial_meaning_token(token=token):
           tokens.append(token)
 
     return tokens
@@ -666,6 +697,7 @@ if __name__ == '__main__':
   parser = GiNZANaturalLanguageProcessing()
 
   text='ハウス食品グループの研究では、1日にクルクミン30mgとビサクロン400μgを12週間摂取し続けた、健康な若い男女の肝機能酵素値がとても低下したと報告されています。'
+  # text='1日にクルクミン30mgとビサクロン400μgを12週間摂取し続けた'
   # text='この薬を飲むことで、著しく肌年齢が下がることが実験で確認されました。'
   # text='究極の美肌を手に入れるために、弊社の化粧水を毎晩たっぷりお使いください。'
   # text='小学生のサツキと妹のメイは、母の療養のために父と一緒に初夏の頃の農村へ引っ越してくる。'
@@ -698,5 +730,15 @@ if __name__ == '__main__':
   # parser.display_token_dependencies(text=text, plot_name='dep.png')
   # parser.display_root_token_parts_of_speech(texts=[text], plot_name='root_pos.png')
 
-  text = 'これは鉛筆じゃない'
+  text = 'シワが気になっていた'
+  text = 'シワも目立たなくなりました'
+  text = 'お肌に贅沢なケアをお届けします'
+
   pprint.pprint(parser.print_token_syntaxes(text=text))
+  # pprint.pprint(parser.get_full_depth_token_syntaxes(text=text))
+  print([token.lemma_ for token in parser.get_meaningful_tokens()])
+  print(parser.check_denial_meaning_sentence())
+  pprint.pprint(parser.get_full_depth_meaningful_token_syntaxes())
+  # pprint.pprint(parser.get_full_depth_named_entity_syntaxes())
+  parser.print_named_entities(text=text)
+  # pprint.pprint(parser.get_full_depth_noun_chunk_syntaxes())
