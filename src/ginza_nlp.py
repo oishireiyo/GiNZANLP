@@ -454,6 +454,45 @@ class GiNZANaturalLanguageProcessing(object):
   def get_full_depth_meaningful_token_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
     return self.get_nth_depth_meaningful_token_syntaxes(text=text, nth=None)
 
+  def get_nth_depth_lemma_syntaxes(self, text: Union[str, None]=None, nth: Union[int, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    tokens = self.get_tokens(text=text)
+    nth_depth_token_syntaxes = {}
+    for token in tokens:
+      _nth_depth_token_syntaxes = []
+      _token = token.head
+      ith = 0
+      while True if nth is None else ith < nth:
+        _nth_depth_token_syntaxes.append(_token.lemma_)
+        if _token == _token.head: break
+        _token = _token.head
+        ith += 1
+      nth_depth_token_syntaxes[token.lemma_] = _nth_depth_token_syntaxes
+    return nth_depth_token_syntaxes
+
+  def get_full_depth_lemma_syntaxes(self, text: Union[str, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    return self.get_nth_depth_lemma_syntaxes(text=text, nth=None)
+
+  def get_nth_depth_meaningful_lemma_syntaxes(self, text: Union[str, None]=None, nth: Union[int, None]=None) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    symbols = ['NOUN', 'PROPN', 'PRON', 'VERB', 'ADJ', 'ADV', 'NUM']
+
+    tokens = self.get_tokens(text=text)
+    nth_depth_token_syntaxes = {}
+    for token in tokens:
+      if token.pos_ in symbols:
+        _nth_depth_token_syntaxes = []
+        _token = token.head
+        ith = 0
+        while True if nth is None else ith < nth:
+          if _token.pos_ in symbols: _nth_depth_token_syntaxes.append(_token.lemma_)
+          if _token == _token.head: break
+          _token = _token.head
+          ith += 1
+        nth_depth_token_syntaxes[token.lemma_] = _nth_depth_token_syntaxes
+    return nth_depth_token_syntaxes
+
+  def get_full_depth_meaningful_lemma_syntaxes(self, text: Union[str, None]) -> dict[spacy.tokens.token.Token, list[spacy.tokens.token.Token]]:
+    return self.get_nth_depth_meaningful_lemma_syntaxes(text=text, nth=None)
+
   def get_nth_depth_named_entity_syntaxes(self, text: Union[str, None]=None, nth: int=3) -> dict[spacy.tokens.span.Span, list[spacy.tokens.token.Token]]:
     entities = self.get_named_entities(text=text)
     nth_depth_entity_syntaxes = {}
